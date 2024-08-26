@@ -43,24 +43,27 @@ class SingletonMeta(type):
 
 
 class RLVisualizer(metaclass=SingletonMeta):
-    _names: list[str]
-    _frames: dict[str, list[torch.Tensor]]
+    _names: list[str] = []
+    _frames: dict[str, list[torch.Tensor]] = {}
     _is_recording: bool = False
     # the number of complete frames added by calling add() and end_step()
     _frame_count: int = 0
 
     BORDER_WIDTH = 1
-    BORDER_COLOR = [0, 191,255]
+    BORDER_COLOR = (0, 191, 255)
+    GRID_SCALE_FACTOR = 10
 
     def reset(self):
-        self._names = None
-        self._frames = None
+        self._names = []
+        self._frames = {}
         self._is_recording = False
         self._frame_count = 0  
 
     def init_names(self, names: list[str]):
-        if self._names is not None:
+        if len(self._names) != 0:
             raise ValueError("Names have already being set. Please call reset().")
+        if len(names) == 0:
+            raise ValueError("Please provide at least one name.")
         self._names = names
         self._frames = {name: [] for name in self._names}
 
@@ -89,7 +92,7 @@ class RLVisualizer(metaclass=SingletonMeta):
     def end_step(self):
         for name, frames in self._frames.items():
             if len(frames) != self._frame_count + 1:
-                raise ValueError(f"The frame for name {name} has not been added for this step.")
+                self._frames[name].append(torch.zeros_like(frames[-1]))
 
         self._frame_count += 1
 
@@ -116,12 +119,15 @@ class RLVisualizer(metaclass=SingletonMeta):
 
         imageio.mimsave(video_path, video)
 
-    def _process_frames(self, frames: list[torch.Tensor]) -> list[np.ndarray]:
-        frames = np.ndarray([frame.numpy() for frame in frames])
+    def _process_frames(self, frames: list[torch.Tensor]) -> np.ndarray:
+        frames = np.array([frame.numpy() for frame in frames])
         frames = normalize(frames)
+        frames = (frames * 255).astype(np.uint8)
         frames = colorize(frames)
         if len(frames.shape) == 5:
-            frames = gridify(frames, self.BORDER_WIDTH, self.BORDER_COLOR)
+            frames = gridify(
+                frames, self.BORDER_WIDTH, self.BORDER_COLOR, scale_factor=self.GRID_SCALE_FACTOR
+            )
 
         return frames
 
@@ -140,7 +146,7 @@ class RLVisualizer(metaclass=SingletonMeta):
             if height != max_height:
                 # Resize the frame to match the max_height while maintaining aspect ratio
                 new_width = int(width * (max_height / height))
-                frame = np.array(Image.fromarray(frame).resize((new_width, max_height)))
+                frame = np.array(Image.fromarray(frame).resize((new_width, max_height), Image.NEAREST))
             
             resized_frames.append(frame)
             total_width += frame.shape[1]
@@ -170,11 +176,13 @@ def colorize(frames: np.ndarray) -> np.ndarray:
     return rgb_frames
 
 
-def gridify(frames: np.ndarray, border_width: int, border_color: tuple[int, int, int]) -> np.ndarray:
+def gridify(frames: np.ndarray, border_width: int, border_color: tuple[int, int, int], scale_factor: int = 1) -> np.ndarray:
     if len(frames.shape) != 5:
         raise ValueError("Input frames should be TxCxHxWx3")
 
     T, C, H, W, _ = frames.shape  # Time, Channels, Height, Width, Color
+    H *= scale_factor
+    W *= scale_factor
     grid_h = int(np.floor(np.sqrt(C)))  # Grid height in cells
     grid_w = int(np.ceil(C / grid_h))   # Grid width in cells
 
@@ -194,7 +202,11 @@ def gridify(frames: np.ndarray, border_width: int, border_color: tuple[int, int,
         x = col * (W + border_width) + border_width
 
         # Place the frame in the grid
-        grid[:, y:y+H, x:x+W] = frames[:, c]
+        if scale_factor != 1:
+            frame_cut = np.repeat(np.repeat(frames[:, c], scale_factor, axis=1), scale_factor, axis=2)
+        else:
+            frame_cut = frames[:, c]
+        grid[:, y:y+H, x:x+W] = frame_cut
 
     return grid
 
@@ -207,24 +219,16 @@ def end_recording(filename: str):
     RLVisualizer().end_recording(filename)
 
 
-def add(name: str, frame: torch.Tensor):
-    RLVisualizer().add(name, frame)
+def add(frame: torch.Tensor, name: str):
+    RLVisualizer().add(frame, name)
 
 
 def end_step():
     RLVisualizer().end_step()
 
 
-def save(filename: str):
-    RLVisualizer().save(filename)
-
-
 def reset():
     RLVisualizer().reset()
-
-
-def is_recording() -> bool:
-    return RLVisualizer().is_recording()
 
 
 def init_names(names: list[str]):
