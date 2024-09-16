@@ -52,6 +52,7 @@ class RLVisualizer(metaclass=SingletonMeta):
     BORDER_WIDTH = 1
     BORDER_COLOR = (0, 191, 255)
     GRID_SCALE_FACTOR = 10
+    FRAME_SCALE_FACTOR = 5
 
     def reset(self):
         self._names = []
@@ -136,7 +137,7 @@ class RLVisualizer(metaclass=SingletonMeta):
             if len(frame.shape) != 3:
                 raise ValueError("All frames must have shape HxWx3")
 
-        max_height = max(frame.shape[0] for frame in frames.values())
+        max_height = max(frame.shape[0] * self.FRAME_SCALE_FACTOR for frame in frames.values())
         
         resized_frames = []
         total_width = 0
