@@ -4,5 +4,6 @@ from .rl_visualizer import (
     add,
     end_step,
     reset,
-    init_names,
+    init_screens,
+    FrameType,
 )

@@ -1,3 +1,4 @@
+from enum import Enum
 from threading import Lock
 
 import imageio
@@ -42,53 +43,89 @@ class SingletonMeta(type):
         return cls._instances[cls]
 
 
+class FrameType(Enum):
+    GRAYSCALE = 1
+    COLOR = 2
+    GRID = 3
+
+
 class RLVisualizer(metaclass=SingletonMeta):
-    _names: list[str] = []
+    _screens: list[str] = []
+    _screen_frame_types = dict[str, FrameType]
     _frames: dict[str, list[torch.Tensor]] = {}
     _is_recording: bool = False
     # the number of complete frames added by calling add() and end_step()
     _frame_count: int = 0
 
-    BORDER_WIDTH = 1
-    BORDER_COLOR = (0, 191, 255)
-    GRID_SCALE_FACTOR = 10
-    FRAME_SCALE_FACTOR = 5
+    _border_width = 1
+    _border_color = (0, 191, 255)
+    _grid_scale_factor = 5
 
     def reset(self):
-        self._names = []
+        self._screens = []
+        self._screen_frame_types = {}
         self._frames = {}
         self._is_recording = False
-        self._frame_count = 0  
+        self._frame_count = 0
 
-    def init_names(self, names: list[str]):
-        if len(self._names) != 0:
-            raise ValueError("Names have already being set. Please call reset().")
+    def set_grid_scale_factor(self, factor):
+        self._grid_scale_factor = factor
+
+    def init_screens(self, names: list[str], frame_types: list[FrameType] = None):
+        if len(self._screens) != 0:
+            raise ValueError("Screens have already being set. Please call reset().")
         if len(names) == 0:
-            raise ValueError("Please provide at least one name.")
-        self._names = names
-        self._frames = {name: [] for name in self._names}
+            raise ValueError("Please provide at least one screen name.")
+        if frame_types is None:
+            frame_types = [FrameType.GRAYSCALE] * len(names)
+        if len(names) != len(frame_types):
+            raise ValueError("Names and frame types must have the same length.")
+        if len(set(names)) != len(names):
+            raise ValueError("Names must not have any duplicates.")
+
+        self._screens = names
+        self._screen_frame_types = {name: frame_type for name, frame_type in zip(names, frame_types)}
+        self._frames = {screen: [] for screen in self._screens}
 
     def start_recording(self):
         if self._is_recording:
             raise ValueError("Visualizer is already recording.")
         self._is_recording = True
 
-    def add(self, frame: torch.Tensor, name: str):
+    def add(self, frame: torch.Tensor, screen: str):
         if self._is_recording:
-            self._add(frame, name)
+            self._add(frame, screen)
         # else ignore
         
-    def _add(self, frame: torch.Tensor, name: str):
-        if name not in self._names:
+    def _add(self, frame: torch.Tensor, screen: str):
+        if screen not in self._screens:
             raise ValueError(
-                f"The name {name} was not initialized.\n"
-                f"Please call reset() and include this name to init_names()."
+                f"The screen {screen} was not initialized.\n"
+                f"Please call reset() and include this screen to init_screens()."
             )
+        if len(self._frames[screen]) == self._frame_count + 1:
+            raise ValueError(f"The frame for screen {screen} has already been added for this step.")
 
-        if len(self._frames[name]) == self._frame_count + 1:
-            raise ValueError(f"The frame for name {name} has already been added for this step.")
+        if self._screen_frame_types[screen] == FrameType.GRAYSCALE:
+            if len(frame.shape) != 2:
+                raise ValueError(
+                    f"Screen {screen} with frame type {FrameType.GRAYSCALE} must have dimensions "
+                    f"HxW, but was given {frame.shape}"
+                )
+        elif self._screen_frame_types[screen] == FrameType.COLOR:
+            if len(frame.shape) != 3 or frame.shape[2] != 3:
+                raise ValueError(
+                    f"Screen {screen} with frame type {FrameType.COLOR} must have dimensions "
+                    f"HxWx3, but was given {frame.shape}"
+                )
+        elif self._screen_frame_types[screen] == FrameType.GRID:
+            if len(frame.shape) != 3:
+                raise ValueError(
+                    f"Screen {screen} with frame type {FrameType.GRID} must have dimensions "
+                    f"CxHxW, but was given {frame.shape}"
+                )
 
-        self._frames[name].append(frame)
+        self._frames[screen].append(frame)
     
     def end_step(self):
         for name, frames in self._frames.items():
@@ -107,9 +144,9 @@ class RLVisualizer(metaclass=SingletonMeta):
         self.reset()
     
     def _save_video(self, video_path):
-        processed_frames = {
-            name: self._process_frames(frames) for name, frames in self._frames.items()
-        }
+        processed_frames = {}
+        for name, frames in self._frames.items():
+            processed_frames[name] = self._process_frames(frames, self._screen_frame_types[name])
 
         video = []
         for i in range(self._frame_count):
@@ -120,14 +157,16 @@ class RLVisualizer(metaclass=SingletonMeta):
 
         imageio.mimsave(video_path, video)
 
-    def _process_frames(self, frames: list[torch.Tensor]) -> np.ndarray:
+    def _process_frames(self, frames: list[torch.Tensor], frame_type: FrameType) -> np.ndarray:
         frames = np.array([frame.numpy() for frame in frames])
         frames = normalize(frames)
         frames = (frames * 255).astype(np.uint8)
-        frames = colorize(frames)
-        if len(frames.shape) == 5:
+
+        if frame_type != FrameType.COLOR:
+            frames = colorize(frames)
+        if frame_type == FrameType.GRID:
             frames = gridify(
-                frames, self.BORDER_WIDTH, self.BORDER_COLOR, scale_factor=self.GRID_SCALE_FACTOR
+                frames, self._border_width, self._border_color, scale_factor=self._grid_scale_factor
             )
 
         return frames
@@ -137,7 +176,7 @@ class RLVisualizer(metaclass=SingletonMeta):
             if len(frame.shape) != 3:
                 raise ValueError("All frames must have shape HxWx3")
 
-        max_height = max(frame.shape[0] * self.FRAME_SCALE_FACTOR for frame in frames.values())
+        max_height = max(frame.shape[0] for frame in frames.values())
         
         resized_frames = []
         total_width = 0
@@ -220,8 +259,8 @@ def end_recording(filename: str):
     RLVisualizer().end_recording(filename)
 
 
-def add(frame: torch.Tensor, name: str):
-    RLVisualizer().add(frame, name)
+def add(frame: torch.Tensor, screen: str):
+    RLVisualizer().add(frame, screen)
 
 
 def end_step():
@@ -232,6 +271,6 @@ def reset():
     RLVisualizer().reset()
 
 
-def init_names(names: list[str]):
-    RLVisualizer().init_names(names)
+def init_screens(screens: list[str], frame_types: list[FrameType] = None):
+    RLVisualizer().init_screens(screens, frame_types)
 
