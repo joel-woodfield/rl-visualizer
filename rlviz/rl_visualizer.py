@@ -92,6 +92,16 @@ class RLVisualizer(metaclass=SingletonMeta):
             raise ValueError("Visualizer is already recording.")
         self._is_recording = True
 
+    def pause_recording(self):
+        if not self._is_recording:
+            raise ValueError("Visualizer is not recording.")
+        self._is_recording = False
+
+    def unpause_recording(self):
+        if self._is_recording:
+            raise ValueError("Visualizer is already recording.")
+        self._is_recording = True
+
     def add(self, frame: torch.Tensor, screen: str):
         if self._is_recording:
             self._add(frame, screen)
@@ -257,6 +267,14 @@ def start_recording():
 
 def end_recording(filename: str):
     RLVisualizer().end_recording(filename)
+
+
+def pause_recording():
+    RLVisualizer().pause_recording()
+
+
+def unpause_recording():
+    RLVisualizer().unpause_recording()
 
 
 def add(frame: torch.Tensor, screen: str):
