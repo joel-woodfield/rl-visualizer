@@ -308,3 +308,6 @@ def reset():
 def init_screens(screens: list[str], frame_types: list[FrameType] = None):
     RLVisualizer().init_screens(screens, frame_types)
 
+
+def set_grid_binary(grid_binary: bool):
+    RLVisualizer().set_grid_binary(grid_binary)

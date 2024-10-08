@@ -8,4 +8,5 @@ from .rl_visualizer import (
     reset,
     init_screens,
     FrameType,
+    set_grid_binary,
 )
