@@ -93,6 +93,8 @@ class RLVisualizer(metaclass=SingletonMeta):
 
         if len(names) != len(frame_types):
             raise ValueError("Names and frame types must have the same length.")
+        if len(names) != len(brightness_factors):
+            raise ValueError("Names and brightness factors must have the same length.")
         if len(set(names)) != len(names):
             raise ValueError("Names must not have any duplicates.")
 
