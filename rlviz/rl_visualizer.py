@@ -60,6 +60,7 @@ class RLVisualizer(metaclass=SingletonMeta):
     _border_width = 1
     _border_color = (0, 191, 255)
     _grid_scale_factor = 5
+    _grid_binary = False
 
     def reset(self):
         self._screens = []
@@ -70,6 +71,9 @@ class RLVisualizer(metaclass=SingletonMeta):
 
     def set_grid_scale_factor(self, factor):
         self._grid_scale_factor = factor
+
+    def set_grid_binary(self, use_binary: bool):
+        self._grid_binary = use_binary
 
     def init_screens(self, names: list[str], frame_types: list[FrameType] = None):
         if len(self._screens) != 0:
@@ -176,7 +180,11 @@ class RLVisualizer(metaclass=SingletonMeta):
             frames = colorize(frames)
         if frame_type == FrameType.GRID:
             frames = gridify(
-                frames, self._border_width, self._border_color, scale_factor=self._grid_scale_factor
+                frames,
+                self._border_width,
+                self._border_color,
+                scale_factor=self._grid_scale_factor,
+                binary=self._grid_binary,
             )
 
         return frames
@@ -226,14 +234,22 @@ def colorize(frames: np.ndarray) -> np.ndarray:
     return rgb_frames
 
 
-def gridify(frames: np.ndarray, border_width: int, border_color: tuple[int, int, int], scale_factor: int = 1) -> np.ndarray:
+def gridify(frames: np.ndarray, border_width: int, border_color: tuple[int, int, int], scale_factor: int = 1, binary: bool = False) -> np.ndarray:
     if len(frames.shape) != 5:
         raise ValueError("Input frames should be TxCxHxWx3")
 
     T, C, H, W, _ = frames.shape  # Time, Channels, Height, Width, Color
     H *= scale_factor
     W *= scale_factor
-    grid_h = int(np.floor(np.sqrt(C)))  # Grid height in cells
+
+    if binary:
+        frames = (frames > 0).astype(np.uint8)
+
+    # work out grid dimensions automatically
+    grid_h = np.ceil(np.sqrt(C))
+    while C % grid_h != 0 and grid_h >= np.floor(np.sqrt(C)):
+        grid_h -= 1
+    grid_h = int(grid_h)  # Grid height in cells
     grid_w = int(np.ceil(C / grid_h))   # Grid width in cells
 
     # Calculate total grid dimensions including borders
