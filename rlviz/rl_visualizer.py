@@ -243,7 +243,7 @@ def gridify(frames: np.ndarray, border_width: int, border_color: tuple[int, int,
     W *= scale_factor
 
     if binary:
-        frames = (frames > 0).astype(np.uint8)
+        frames = (frames > 0).astype(np.uint8) * 255
 
     # work out grid dimensions automatically
     grid_h = np.ceil(np.sqrt(C))
