@@ -51,7 +51,9 @@ class FrameType(Enum):
 
 class RLVisualizer(metaclass=SingletonMeta):
     _screens: list[str] = []
-    _screen_frame_types = dict[str, FrameType]
+    _screen_frame_types: dict[str, FrameType] = {}
+    _screen_brightness_factors: dict[str, float] = {}
+
     _frames: dict[str, list[torch.Tensor]] = {}
     _is_recording: bool = False
     # the number of complete frames added by calling add() and end_step()
@@ -60,35 +62,48 @@ class RLVisualizer(metaclass=SingletonMeta):
     _border_width = 1
     _border_color = (0, 191, 255)
     _grid_scale_factor = 5
-    _grid_binary = False
 
     def reset(self):
         self._screens = []
         self._screen_frame_types = {}
+        self._screen_brightness_factors = {}
+
         self._frames = {}
         self._is_recording = False
         self._frame_count = 0
 
-    def set_grid_scale_factor(self, factor):
+    def set_grid_scale_factor(self, factor: int):
         self._grid_scale_factor = factor
 
-    def set_grid_binary(self, use_binary: bool):
-        self._grid_binary = use_binary
-
-    def init_screens(self, names: list[str], frame_types: list[FrameType] = None):
+    def init_screens(
+        self,
+        names: list[str],
+        frame_types: list[FrameType] = None,
+        brightness_factors: list[float] = None
+    ):
         if len(self._screens) != 0:
             raise ValueError("Screens have already being set. Please call reset().")
         if len(names) == 0:
             raise ValueError("Please provide at least one screen name.")
+
         if frame_types is None:
             frame_types = [FrameType.GRAYSCALE] * len(names)
+        if brightness_factors is None:
+            brightness_factors = [1.0] * len(names)
+
         if len(names) != len(frame_types):
             raise ValueError("Names and frame types must have the same length.")
         if len(set(names)) != len(names):
             raise ValueError("Names must not have any duplicates.")
 
         self._screens = names
-        self._screen_frame_types = {name: frame_type for name, frame_type in zip(names, frame_types)}
+        self._screen_frame_types = {
+            name: frame_type for name, frame_type in zip(names, frame_types)
+        }
+        self._screen_brightness_factors = {
+            name: factor for name, factor in zip(names, brightness_factors)
+        }
+
         self._frames = {screen: [] for screen in self._screens}
 
     def start_recording(self):
@@ -160,7 +175,9 @@ class RLVisualizer(metaclass=SingletonMeta):
     def _save_video(self, video_path):
         processed_frames = {}
         for name, frames in self._frames.items():
-            processed_frames[name] = self._process_frames(frames, self._screen_frame_types[name])
+            processed_frames[name] = self._process_frames(
+                frames, self._screen_frame_types[name], self._screen_brightness_factors[name]
+            )
 
         video = []
         for i in range(self._frame_count):
@@ -171,7 +188,9 @@ class RLVisualizer(metaclass=SingletonMeta):
 
         imageio.mimsave(video_path, video)
 
-    def _process_frames(self, frames: list[torch.Tensor], frame_type: FrameType) -> np.ndarray:
+    def _process_frames(
+        self, frames: list[torch.Tensor], frame_type: FrameType, brightness_factor: float = 1
+    ) -> np.ndarray:
         frames = np.array([frame.numpy() for frame in frames])
         frames = normalize(frames)
         frames = (frames * 255).astype(np.uint8)
@@ -184,8 +203,10 @@ class RLVisualizer(metaclass=SingletonMeta):
                 self._border_width,
                 self._border_color,
                 scale_factor=self._grid_scale_factor,
-                binary=self._grid_binary,
             )
+
+        if brightness_factor != 1:
+            frames = np.clip(frames * brightness_factor, 0, 255).astype(np.uint8)
 
         return frames
 
@@ -204,7 +225,8 @@ class RLVisualizer(metaclass=SingletonMeta):
             if height != max_height:
                 # Resize the frame to match the max_height while maintaining aspect ratio
                 new_width = int(width * (max_height / height))
-                frame = np.array(Image.fromarray(frame).resize((new_width, max_height), Image.NEAREST))
+                frame = Image.fromarray(frame).resize((new_width, max_height), Image.NEAREST)
+                frame = np.array(frame)
             
             resized_frames.append(frame)
             total_width += frame.shape[1]
@@ -234,16 +256,15 @@ def colorize(frames: np.ndarray) -> np.ndarray:
     return rgb_frames
 
 
-def gridify(frames: np.ndarray, border_width: int, border_color: tuple[int, int, int], scale_factor: int = 1, binary: bool = False) -> np.ndarray:
+def gridify(
+    frames: np.ndarray, border_width: int, border_color: tuple[int, int, int], scale_factor: int = 1
+) -> np.ndarray:
     if len(frames.shape) != 5:
         raise ValueError("Input frames should be TxCxHxWx3")
 
     T, C, H, W, _ = frames.shape  # Time, Channels, Height, Width, Color
     H *= scale_factor
     W *= scale_factor
-
-    if binary:
-        frames = (frames > 0).astype(np.uint8) * 255
 
     # work out grid dimensions automatically
     grid_h = np.ceil(np.sqrt(C))
@@ -307,7 +328,3 @@ def reset():
 
 def init_screens(screens: list[str], frame_types: list[FrameType] = None):
     RLVisualizer().init_screens(screens, frame_types)
-
-
-def set_grid_binary(grid_binary: bool):
-    RLVisualizer().set_grid_binary(grid_binary)
