@@ -326,5 +326,7 @@ def reset():
     RLVisualizer().reset()
 
 
-def init_screens(screens: list[str], frame_types: list[FrameType] = None):
-    RLVisualizer().init_screens(screens, frame_types)
+def init_screens(
+    screens: list[str], frame_types: list[FrameType] = None, brightness_factors: list[float] = None
+):
+    RLVisualizer().init_screens(screens, frame_types, brightness_factors)
