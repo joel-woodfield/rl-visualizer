@@ -47,6 +47,7 @@ class FrameType(Enum):
     GRAYSCALE = 1
     COLOR = 2
     GRID = 3
+    LOGGRID = 4
 
 
 class RLVisualizer(metaclass=SingletonMeta):
@@ -149,11 +150,14 @@ class RLVisualizer(metaclass=SingletonMeta):
                     f"Screen {screen} with frame type {FrameType.COLOR} must have dimensions "
                     f"HxWx3, but was given {frame.shape}"
                 )
-        elif self._screen_frame_types[screen] == FrameType.GRID:
+        elif (
+            self._screen_frame_types[screen] == FrameType.GRID
+            or self._screen_frame_types[screen] == FrameType.LOGGRID
+        ):
             if len(frame.shape) != 3:
                 raise ValueError(
-                    f"Screen {screen} with frame type {FrameType.GRID} must have dimensions "
-                    f"CxHxW, but was given {frame.shape}"
+                    f"Screen {screen} with frame type {self._screen_frame_types[screen]} "
+                    f"must have dimensions CxHxW, but was given {frame.shape}"
                 )
 
         self._frames[screen].append(frame)
@@ -199,7 +203,9 @@ class RLVisualizer(metaclass=SingletonMeta):
 
         if frame_type != FrameType.COLOR:
             frames = colorize(frames)
-        if frame_type == FrameType.GRID:
+        if frame_type == FrameType.GRID or frame_type == FrameType.LOGGRID:
+            if frame_type == FrameType.LOGGRID:
+                frames = np.log1p(frames)
             frames = gridify(
                 frames,
                 self._border_width,
