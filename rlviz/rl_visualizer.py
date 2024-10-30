@@ -198,14 +198,14 @@ class RLVisualizer(metaclass=SingletonMeta):
         self, frames: list[torch.Tensor], frame_type: FrameType, brightness_factor: float = 1
     ) -> np.ndarray:
         frames = np.array([frame.numpy() for frame in frames])
+        if frame_type == FrameType.LOGGRID:
+            frames = np.log1p(frames)
         frames = normalize(frames)
         frames = (frames * 255).astype(np.uint8)
 
         if frame_type != FrameType.COLOR:
             frames = colorize(frames)
         if frame_type == FrameType.GRID or frame_type == FrameType.LOGGRID:
-            if frame_type == FrameType.LOGGRID:
-                frames = np.log1p(frames)
             frames = gridify(
                 frames,
                 self._border_width,
