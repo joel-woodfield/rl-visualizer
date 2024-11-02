@@ -14,7 +14,7 @@ for k in range(num_steps):
     rlviz.add(obs, "obs")
     latent = encoder(obs)
     rlviz.add(latent, "latent")
-    action = q_head(latent)
+    action = argmax(q_head(latent))
     rlviz.end_step()
 
     obs, action, reward, next_obs, done = env.step(action)
