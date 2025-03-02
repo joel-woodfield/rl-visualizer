@@ -149,6 +149,11 @@ class RlVisualizer(metaclass=SingletonMeta):
             for attribute, data in self._data.items():
                 f.create_dataset(attribute, data=self._process_data_h5py(attribute, data))
 
+            # Store metadata about data types
+            dtype_group = f.create_group("_dtypes")  # Create a group to store data types
+            for attribute, rlviz_type in self._types.items():
+                dtype_group.attrs[attribute] = str(rlviz_type)  # Store type as string
+
     def _process_data_h5py(self, attribute: str, data: list[object]):
         rlviz_type = self._types[attribute]
 
