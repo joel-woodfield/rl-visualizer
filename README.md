@@ -7,7 +7,7 @@ RL-Visualizer is a simple, easy-to-use software to visualize RL algorithms. It i
 pip install git+https://github.com/joel-woodfield/rl-visualizer.git
 ```
 
-## Usage
+## API Usage
 ```python
 # Evaluation code
 import rlviz
@@ -35,3 +35,9 @@ for k in range(num_steps):
 rlviz.end_recording("data.h5")
 ```
 
+## GUI Usage
+Run
+```bash
+rlviz
+```
+Then select the desired .h5 file to view.
