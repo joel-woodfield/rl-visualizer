@@ -1,0 +1,90 @@
+html, body, #root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  font-family: "Inter", sans-serif; /* Modern, clean font */
+  background-color: #f4f4f9; /* Light neutral background */
+  color: #333;
+}
+
+.app-container {
+  display: grid;
+  grid-template-columns: 2fr 1fr auto; /* Image 2x width, text 1x width, sidebar auto */
+  grid-template-rows: 1fr auto; /* Content row, slider row */
+  grid-template-areas:
+    "image text sidebar"
+    "slider slider slider";
+  height: 100vh; /* Full viewport height */
+  width: 100vw;
+  gap: 12px; /* Spacing between sections */
+  padding: 16px;
+  box-sizing: border-box;
+}
+
+/* Image Area */
+.image-area {
+  grid-area: image;
+  background: linear-gradient(135deg, #ddebf7, #a0c4ff); /* Subtle gradient */
+  border-radius: 12px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #555;
+  font-size: 1.2rem;
+  font-weight: bold;
+  overflow: hidden;
+}
+
+/* Text Area */
+.text-area {
+  grid-area: text;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  padding: 16px;
+  overflow-y: auto;
+}
+
+/* Sidebar */
+.sidebar {
+  grid-area: sidebar;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  padding: 16px;
+  width: 280px; /* Adjust width */
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  overflow-y: auto;
+}
+
+/* Timestep Slider */
+.timestep-slider {
+  grid-area: slider;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  padding: 12px;
+  text-align: center;
+  font-weight: bold;
+}
+
+/* Make scrollbar less intrusive */
+.sidebar::-webkit-scrollbar,
+.text-area::-webkit-scrollbar {
+  width: 8px;
+}
+
+.sidebar::-webkit-scrollbar-thumb,
+.text-area::-webkit-scrollbar-thumb {
+  background: #ccc;
+  border-radius: 4px;
+}
+
+.sidebar::-webkit-scrollbar-thumb:hover,
+.text-area::-webkit-scrollbar-thumb:hover {
+  background: #aaa;
+}
+

@@ -1,22 +1,26 @@
 from setuptools import setup, find_packages
 
 setup(
-    name="rlviz",  # The name of your package
-    version="0.1.0",           # Version of your package
-    author="Joel Woodfield",
-    author_email="joelwoodfield@gmail.com",
-    description="Visualizer for RL",
-    url="https://github.com/joel-woodfield/rl_visualizer",  # Link to your GitHub repository
-    packages=find_packages(),  # Automatically find all packages in your project
-    install_requires=[         # List of dependencies (if any)
-        'torch',
-        'tqdm',
-        'imageio',
+    name="rlviz",
+    version="0.1.0",
+    packages=find_packages(),
+    install_requires=[
+        "fastapi",
+        "uvicorn",
+        "click",
+        "python-multipart",
+        "h5py",
+        "imageio",
+        "numpy",
     ],
-    classifiers=[
-        "Programming Language :: Python :: 3",
-        "License :: OSI Approved :: MIT License",  # Choose the appropriate license
-        "Operating System :: OS Independent",
-    ],
-    python_requires='>=3.9',   # Specify the Python versions you support
+    include_package_data=True,
+    package_data={
+        "rlviz": ["static/**/*"],
+    },
+    entry_points={
+        "console_scripts": [
+            "rlviz=rlviz.cli:run"
+        ]
+    },
 )
+

@@ -1,11 +1,11 @@
-from .rl_visualizer import (
+from .api import (
+    init_attributes,
     start_recording,
     end_recording,
-    pause_recording,
-    unpause_recording,
+    pause,
+    unpause,
     add,
     end_step,
     reset,
-    init_screens,
-    FrameType,
+    RlvizType,
 )
