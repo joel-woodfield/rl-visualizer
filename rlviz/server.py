@@ -126,8 +126,11 @@ async def get_num_timesteps():
     if h5_file is None:
         raise HTTPException(status_code=400, detail="No file loaded.")
 
-    # Assuming timesteps are determined by the first dataset's length
-    first_attr = next(iter(h5_file.keys()), None)
+    first_attr = None
+    for attr in h5_file.keys():
+        if attr.startswith("_"):
+            continue
+        first_attr = attr
     if first_attr is None:
         raise HTTPException(status_code=400, detail="No attributes found in HDF5 file.")
 
