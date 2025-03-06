@@ -13,7 +13,7 @@ pip install git+https://github.com/joel-woodfield/rl-visualizer.git
 import rlviz
 rlviz.init_attributes(
     ["obs", "latent", "action", "value"], 
-    [RlvizType.COLOR, RlvizType.LOGGRID, RlvizType.TEXT, RlvizType.TEXT]],
+    [RlvizType.COLOR, RlvizType.LOGGRID, RlvizType.TEXT, RlvizType.TEXT],
 )
 
 rlviz.start_recording()
