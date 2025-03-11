@@ -5,7 +5,6 @@ from threading import Lock
 import h5py
 import imageio
 import numpy as np
-import torch
 from PIL import Image
 import pickle
 
@@ -50,8 +49,7 @@ class RlvizType(Enum):
     GRAYSCALE = 1
     COLOR = 2
     GRID = 3
-    LOGGRID = 4
-    TEXT = 5
+    TEXT = 4
 
 
 class RlVisualizer(metaclass=SingletonMeta):
@@ -194,10 +192,6 @@ class RlVisualizer(metaclass=SingletonMeta):
         return data
 
 
-def normalize(frames: np.ndarray) -> np.ndarray:
-    return (frames - np.min(frames)) / (np.max(frames) - np.min(frames))
-
-
 def colorize(frames: np.ndarray) -> np.ndarray:
     # TODO test if it works for 4dim array
     if len(frames.shape) not in [3, 4]:
@@ -247,6 +241,12 @@ def gridify(
         grid[:, y:y+H, x:x+W] = frame_cut
 
     return grid
+
+
+GRAYSCALE = RlvizType.GRAYSCALE
+COLOR = RlvizType.COLOR
+GRID = RlvizType.GRID
+TEXT = RlvizType.TEXT
 
 
 def init_attributes(names: list[str], types: list[RlvizType]):

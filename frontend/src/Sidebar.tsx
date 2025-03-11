@@ -5,6 +5,8 @@ interface SidebarProps {
   setSelectedTextAttributes: React.Dispatch<React.SetStateAction<string[]>>;
   selectedColorAttributes: string[];
   setSelectedColorAttributes: React.Dispatch<React.SetStateAction<string[]>>;
+  selectedGridAttributes: string[];
+  setSelectedGridAttributes: React.Dispatch<React.SetStateAction<string[]>>;
 }
 
 
@@ -13,9 +15,12 @@ const Sidebar: React.FC<SidebarProps> = ({
   setSelectedTextAttributes,
   selectedColorAttributes,
   setSelectedColorAttributes,
+  selectedGridAttributes,
+  setSelectedGridAttributes,
 }) => {
   const [colorAttributes, setColorAttributes] = useState<string[]>([]);
   const [textAttributes, setTextAttributes] = useState<string[]>([]);
+  const [gridAttributes, setGridAttributes] = useState<string[]>([]);
 
   useEffect(() => {
     const fetchAttributes = async () => {
@@ -37,6 +42,7 @@ const Sidebar: React.FC<SidebarProps> = ({
         // Separate attributes into COLOR and TEXT
         setColorAttributes(attributes.filter(attr => dtypes[attr] === "RlvizType.COLOR"));
         setTextAttributes(attributes.filter(attr => dtypes[attr] === "RlvizType.TEXT"));
+        setGridAttributes(attributes.filter(attr => dtypes[attr] === "RlvizType.GRID"));
       } catch (error) {
         console.error("Error fetching attributes:", error);
       }
@@ -46,12 +52,18 @@ const Sidebar: React.FC<SidebarProps> = ({
   }, []);
 
   // Toggles selection for attributes
-  const toggleAttribute = (attr: string, isColor: boolean) => {
+  const toggleAttribute = (attr: string, isColor: boolean, isGrid: boolean) => {
     if (isColor) {
       setSelectedColorAttributes((prevSelected) =>
-        prevSelected.includes(attr)
-          ? prevSelected.filter((a) => a !== attr) 
-          : [...prevSelected, attr] 
+          prevSelected.includes(attr)
+            ? prevSelected.filter((a) => a !== attr)
+            : [...prevSelected, attr]
+      );
+    } else if (isGrid) {
+      setSelectedGridAttributes((prevSelected) =>
+          prevSelected.includes(attr)
+            ? prevSelected.filter((a) => a !== attr)
+            : [...prevSelected, attr]
       );
     } else {
       setSelectedTextAttributes((prevSelected) =>
@@ -80,12 +92,29 @@ const Sidebar: React.FC<SidebarProps> = ({
                   <input
                     type="checkbox"
                     checked={selectedColorAttributes.includes(attr)}
-                    onChange={() => toggleAttribute(attr, true)}
+                    onChange={() => toggleAttribute(attr, true, false)}
                   />
                   <label>{attr}</label>
                 </div>
               ))}
             </>
+          )}
+
+          {/* GRID Attributes */}
+          {gridAttributes.length > 0 && (
+              <>
+                <h4>Grid Attributes</h4>
+                {gridAttributes.map(attr => (
+                    <div key={attr}>
+                      <input
+                          type="checkbox"
+                          checked={selectedGridAttributes.includes(attr)}
+                          onChange={() => toggleAttribute(attr, false, true)}
+                      />
+                      <label>{attr}</label>
+                    </div>
+                ))}
+              </>
           )}
 
           {/* TEXT Attributes */}
@@ -97,7 +126,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                   <input
                     type="checkbox"
                     checked={selectedTextAttributes.includes(attr)}
-                    onChange={() => toggleAttribute(attr, false)}
+                    onChange={() => toggleAttribute(attr, false, false)}
                   />
                   <label>{attr}</label>
                 </div>

@@ -8,4 +8,8 @@ from .api import (
     end_step,
     reset,
     RlvizType,
+    GRAYSCALE,
+    COLOR,
+    GRID,
+    TEXT,
 )

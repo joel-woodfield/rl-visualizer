@@ -113,6 +113,10 @@ async def get_data(timestep: int):
                 print(f"Error converting image {attr}: {e}")
                 value = None
 
+        elif rlviz_type == "RlvizType.GRID" and isinstance(value, np.ndarray):
+            value = (normalize(value) * 255).astype(np.uint8)
+            value = value.tolist()
+
         elif isinstance(value, np.ndarray):
             value = value.tolist()  # Convert NumPy array to JSON
 
@@ -143,4 +147,8 @@ def start_server(host="127.0.0.1", port=8000):
     """Starts the FastAPI server."""
     import uvicorn
     uvicorn.run(app, host=host, port=port)
+
+
+def normalize(frames: np.ndarray) -> np.ndarray:
+    return (frames - np.min(frames)) / (np.max(frames) - np.min(frames))
 

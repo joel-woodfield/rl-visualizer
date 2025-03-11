@@ -9,14 +9,14 @@ html, body, #root {
 
 .app-container {
   display: grid;
-  grid-template-columns: 2fr 1fr auto; /* Image 2x width, text 1x width, sidebar auto */
-  grid-template-rows: 1fr auto; /* Content row, slider row */
+  grid-template-columns: 2fr 2fr 1fr auto;
+  grid-template-rows: 1fr auto;
   grid-template-areas:
-    "image text sidebar"
-    "slider slider slider";
-  height: 100vh; /* Full viewport height */
+    "image grid text sidebar"
+    "slider slider slider slider";
+  height: 100vh;
   width: 100vw;
-  gap: 12px; /* Spacing between sections */
+  gap: 12px;
   padding: 16px;
   box-sizing: border-box;
 }
@@ -33,6 +33,19 @@ html, body, #root {
   color: #555;
   font-size: 1.2rem;
   font-weight: bold;
+  overflow: hidden;
+}
+
+/* Grid Area */
+.grid-area {
+  grid-area: grid;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   overflow: hidden;
 }
 
