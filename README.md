@@ -19,13 +19,13 @@ rlviz.init_attributes(
 rlviz.start_recording()
 obs = env.reset()
 for k in range(num_steps):
-    rlviz.add("obs", obs)
     latent = encoder(obs)
-    rlviz.add("latent", latent)
-
     values = q_head(latent)
     action = argmax(values)
     value = max(values)
+
+    rlviz.add("obs", obs)
+    rlviz.add("latent", latent)
     rlviz.add("action", action)
     rlviz.add("value", value)
     rlviz.end_step()
