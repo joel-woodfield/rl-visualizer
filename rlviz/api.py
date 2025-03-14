@@ -141,6 +141,7 @@ class RlVisualizer(metaclass=SingletonMeta):
             raise ValueError("Rlviz must be recording to call end_recording()")
 
         self._save_data(output_path)
+        self._is_recording = False
 
     def _save_data(self, output_path: str):
         with h5py.File(output_path, "w") as f:
@@ -190,57 +191,6 @@ class RlVisualizer(metaclass=SingletonMeta):
     def _process_data(self, data: object):
         # todo
         return data
-
-
-def colorize(frames: np.ndarray) -> np.ndarray:
-    # TODO test if it works for 4dim array
-    if len(frames.shape) not in [3, 4]:
-        raise ValueError("Input frames should be TxHxW or TxCxHxW")
-
-    rgb_frames = np.stack([frames] * 3, axis=-1)
-    return rgb_frames
-
-
-def gridify(
-    frames: np.ndarray, border_width: int, border_color: tuple[int, int, int], scale_factor: int = 1
-) -> np.ndarray:
-    if len(frames.shape) != 5:
-        raise ValueError("Input frames should be TxCxHxWx3")
-
-    T, C, H, W, _ = frames.shape  # Time, Channels, Height, Width, Color
-    H *= scale_factor
-    W *= scale_factor
-
-    # work out grid dimensions automatically
-    grid_h = np.ceil(np.sqrt(C))
-    while C % grid_h != 0 and grid_h >= np.floor(np.sqrt(C)):
-        grid_h -= 1
-    grid_h = int(grid_h)  # Grid height in cells
-    grid_w = int(np.ceil(C / grid_h))   # Grid width in cells
-
-    # Calculate total grid dimensions including borders
-    total_h = H * grid_h + border_width * (grid_h + 1)
-    total_w = W * grid_w + border_width * (grid_w + 1)
-    
-    # Initialize grid with border color
-    grid = np.full((T, total_h, total_w, 3), border_color, dtype=frames.dtype)
-
-    for c in range(C):
-        row = c // grid_w
-        col = c % grid_w
-
-        # Calculate top-left corner of current cell
-        y = row * (H + border_width) + border_width
-        x = col * (W + border_width) + border_width
-
-        # Place the frame in the grid
-        if scale_factor != 1:
-            frame_cut = np.repeat(np.repeat(frames[:, c], scale_factor, axis=1), scale_factor, axis=2)
-        else:
-            frame_cut = frames[:, c]
-        grid[:, y:y+H, x:x+W] = frame_cut
-
-    return grid
 
 
 GRAYSCALE = RlvizType.GRAYSCALE
