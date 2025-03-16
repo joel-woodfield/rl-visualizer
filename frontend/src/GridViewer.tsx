@@ -67,9 +67,13 @@ const GridViewer: React.FC<GridViewerProps> = ({
             // Get the actual content size inside `.grid-area`
             const { width, height } = containerRef.current.getBoundingClientRect();
 
-            // Subtract padding (16px on left & right)
+            // padding on both sides 
             const effectiveWidth = width - 32;
-            const effectiveHeight = height - 32;
+            let effectiveHeight = height - 32;
+
+            const numGrids = Object.values(gridData).length
+            if (numGrids === 0) return;
+            effectiveHeight = effectiveHeight / numGrids;
 
             // Ensure the canvas fits within the adjusted area
             setCanvasSize(Math.min(effectiveWidth, effectiveHeight));
@@ -83,8 +87,13 @@ const GridViewer: React.FC<GridViewerProps> = ({
             resizeObserver.observe(containerRef.current);
         }
 
-        return () => resizeObserver.disconnect();
-    }, []);
+        window.addEventListener("resize", updateCanvasSize);
+
+        return () => {
+            resizeObserver.disconnect();
+            window.removeEventListener("resize", updateCanvasSize);
+        };
+    }, [gridData]);
 
 
     const convertToGrid = (array: number[][][]): Grid => {
@@ -167,7 +176,7 @@ const GridViewer: React.FC<GridViewerProps> = ({
             ) : (
                 Object.keys(gridData).map(attr => (
                     <div key={attr} style={{ width: canvasSize, height: canvasSize }}>
-                        <h4 style={{ margin: "4px 0", fontSize: "16px", color: "#444" }}>{attr}</h4>
+                        <h4 style={{ margin: "0px 0", fontSize: "16px", color: "#444" }}>{attr}</h4>
                         <canvas ref={el => { canvasRefs.current[attr] = el; }} width={canvasSize} height={canvasSize} />
                     </div>
                 ))
