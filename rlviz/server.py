@@ -1,4 +1,3 @@
-
 import base64
 import os
 import h5py
@@ -14,7 +13,7 @@ h5_file = None
 h5_file_path = None
 
 # Define where uploaded files are temporarily stored
-UPLOAD_DIR = "/tmp"  # Adjust this if needed
+UPLOAD_DIR = f"/tmp/rlviz_{os.getpid()}"  # Adjust this if needed
 
 # Serve frontend (React build)
 STATIC_DIR = os.path.join(os.path.dirname(__file__), "static")
