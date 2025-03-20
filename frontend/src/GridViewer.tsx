@@ -24,7 +24,8 @@ const GridViewer: React.FC<GridViewerProps> = ({
                                                    gridSpacing = 10,
                                                }) => {
     const [gridData, setGridData] = useState<Record<string, number[][][] | null>>({});
-    const [canvasSize, setCanvasSize] = useState<number>(300);
+    const [canvasWidth, setCanvasWidth] = useState<number>(300);
+    const [canvasHeight, setCanvasHeight] = useState<number>(300);
     const canvasRefs = useRef<Record<string, HTMLCanvasElement | null>>({});
 
     useEffect(() => {
@@ -58,7 +59,7 @@ const GridViewer: React.FC<GridViewerProps> = ({
 
     useEffect(() => {
         drawGrids();
-    }, [gridData, gridSpacing, canvasSize]);
+    }, [gridData, gridSpacing, canvasWidth, canvasHeight]);
 
     useEffect(() => {
         const updateCanvasSize = () => {
@@ -76,7 +77,8 @@ const GridViewer: React.FC<GridViewerProps> = ({
             effectiveHeight = effectiveHeight / numGrids;
 
             // Ensure the canvas fits within the adjusted area
-            setCanvasSize(Math.min(effectiveWidth, effectiveHeight));
+            setCanvasWidth(effectiveWidth);
+            setCanvasHeight(effectiveHeight);
         };
 
         updateCanvasSize(); // Run once on mount
@@ -123,22 +125,23 @@ const GridViewer: React.FC<GridViewerProps> = ({
         if (!ctx) return;
 
         // Compute canvas size
-        const panelWidth = Math.floor((canvasSize - (grid.width - 1) * gridSpacing) / grid.width);
-        const panelHeight = Math.floor((canvasSize - (grid.height - 1) * gridSpacing) / grid.height);
+        const panelWidth = Math.floor((canvasWidth - (grid.width - 1) * gridSpacing) / grid.width);
+        const panelHeight = Math.floor((canvasHeight - (grid.height - 1) * gridSpacing) / grid.height);
+        const panelSize = Math.min(panelWidth, panelHeight);
 
         // Set canvas size
-        canvas.width = canvasSize;
-        canvas.height = canvasSize;
+        canvas.width = canvasWidth;
+        canvas.height = canvasHeight;
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
         // Draw each panel at its correct position
         grid.panels.forEach((panel, index) => {
             const col = index % grid.width;
             const row = Math.floor(index / grid.width);
-            const x = col * (panelWidth + gridSpacing);
-            const y = row * (panelHeight + gridSpacing);
+            const x = col * (panelSize + gridSpacing);
+            const y = row * (panelSize + gridSpacing);
 
-            drawPanel(ctx, panel, x, y, panelWidth, panelHeight);
+            drawPanel(ctx, panel, x, y, panelSize, panelSize);
         });
     };
 
@@ -175,9 +178,9 @@ const GridViewer: React.FC<GridViewerProps> = ({
                 <p>No grids selected</p>
             ) : (
                 Object.keys(gridData).map(attr => (
-                    <div key={attr} style={{ width: canvasSize, height: canvasSize }}>
+                    <div key={attr} style={{ width: canvasWidth, height: canvasHeight }}>
                         <h4 style={{ margin: "0px 0", fontSize: "16px", color: "#444" }}>{attr}</h4>
-                        <canvas ref={el => { canvasRefs.current[attr] = el; }} width={canvasSize} height={canvasSize} />
+                        <canvas ref={el => { canvasRefs.current[attr] = el; }} width={canvasWidth} height={canvasHeight} />
                     </div>
                 ))
             )}
