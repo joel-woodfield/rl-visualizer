@@ -123,8 +123,10 @@ class RlVisualizer(metaclass=SingletonMeta):
         self._step_buffer[name] = self._process_data(data)
 
     def end_step(self):
-        if self._step_number == 0 and any(attr not in self._step_buffer for attr in self._attributes):
-            raise ValueError("Must add all attributes in the first step.")
+        if self._step_number == 0:
+            for attr in self._attributes:
+                if attr not in self._step_buffer:
+                    raise ValueError(f"Missing attribute {attr} in buffer")
 
         for attribute in self._attributes:
             if attribute not in self._step_buffer:

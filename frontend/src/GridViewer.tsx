@@ -1,8 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 
 interface GridViewerProps {
-    selectedAttributes: string[];
-    timestep: number;
+    data: Record<string, number[][][] | null>
     containerRef: React.RefObject<HTMLDivElement | null>;
     gridSpacing?: number;
 }
@@ -17,49 +16,14 @@ interface Grid {
     height: number;
 }
 
-const GridViewer: React.FC<GridViewerProps> = ({
-                                                   selectedAttributes,
-                                                   timestep,
-                                                   containerRef,
-                                                   gridSpacing = 10,
-                                               }) => {
-    const [gridData, setGridData] = useState<Record<string, number[][][] | null>>({});
+const GridViewer: React.FC<GridViewerProps> = ({ data, containerRef, gridSpacing = 10 }) => {
     const [canvasWidth, setCanvasWidth] = useState<number>(300);
     const [canvasHeight, setCanvasHeight] = useState<number>(300);
     const canvasRefs = useRef<Record<string, HTMLCanvasElement | null>>({});
 
     useEffect(() => {
-        const fetchData = async () => {
-            if (selectedAttributes.length === 0) {
-                setGridData({});
-                return;
-            }
-
-            try {
-                const response = await fetch(`/data?timestep=${timestep}`);
-                if (!response.ok) throw new Error("Failed to fetch data");
-
-                const data = await response.json();
-
-                const filteredData: Record<string, number[][][]> = {};
-                selectedAttributes.forEach(attr => {
-                    if (attr in data.data && Array.isArray(data.data[attr])) {
-                        filteredData[attr] = data.data[attr]; // Expecting (d, s, s) format
-                    }
-                });
-
-                setGridData(filteredData);
-            } catch (error) {
-                console.error("Error fetching grid data:", error);
-            }
-        };
-
-        fetchData();
-    }, [timestep, selectedAttributes]);
-
-    useEffect(() => {
         drawGrids();
-    }, [gridData, gridSpacing, canvasWidth, canvasHeight]);
+    }, [data, gridSpacing, canvasWidth, canvasHeight]);
 
     useEffect(() => {
         const updateCanvasSize = () => {
@@ -72,7 +36,7 @@ const GridViewer: React.FC<GridViewerProps> = ({
             const effectiveWidth = width - 32;
             let effectiveHeight = height - 32;
 
-            const numGrids = Object.values(gridData).length
+            const numGrids = Object.values(data).length
             if (numGrids === 0) return;
             effectiveHeight = effectiveHeight / numGrids;
 
@@ -95,7 +59,7 @@ const GridViewer: React.FC<GridViewerProps> = ({
             resizeObserver.disconnect();
             window.removeEventListener("resize", updateCanvasSize);
         };
-    }, [gridData]);
+    }, [data]);
 
 
     const convertToGrid = (array: number[][][]): Grid => {
@@ -165,7 +129,7 @@ const GridViewer: React.FC<GridViewerProps> = ({
     };
 
     const drawGrids = () => {
-        Object.entries(gridData).forEach(([attr, array]) => {
+        Object.entries(data).forEach(([attr, array]) => {
             if (!array) return;
             let grid = convertToGrid(array);
             drawGrid(grid, canvasRefs.current[attr]);
@@ -174,10 +138,10 @@ const GridViewer: React.FC<GridViewerProps> = ({
 
     return (
         <div style={{ padding: "10px", textAlign: "center", display: "flex", flexDirection: "column", gap: "10px" }}>
-            {selectedAttributes.length === 0 ? (
+            {Object.keys(data).length === 0 ? (
                 <p>No grids selected</p>
             ) : (
-                Object.keys(gridData).map(attr => (
+                Object.keys(data).map(attr => (
                     <div key={attr} style={{ width: canvasWidth, height: canvasHeight }}>
                         <h4 style={{ margin: "0px 0", fontSize: "16px", color: "#444" }}>{attr}</h4>
                         <canvas ref={el => { canvasRefs.current[attr] = el; }} width={canvasWidth} height={canvasHeight} />
