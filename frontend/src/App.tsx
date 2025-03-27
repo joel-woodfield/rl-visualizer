@@ -88,7 +88,7 @@ const App = () => {
         ) : (
             <>
               <div className="image-area">
-                <ImageViewer data={imageData} />
+                <ImageViewer data={imageData} gridData={gridData} />
               </div>
 
               <div ref={gridContainerRef} className="grid-area">
