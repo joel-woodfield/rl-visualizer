@@ -30,7 +30,7 @@ for k in range(num_steps):
     rlviz.add("value", value)
     rlviz.end_step()
 
-    obs, action, reward, next_obs, done = env.step(action)
+    obs, reward, done = env.step(action)
 
 rlviz.end_recording("data.h5")
 ```
